@@ -1,0 +1,160 @@
+import json
+from pathlib import Path
+from typing import Any, Dict, Tuple
+
+
+def load_json(path: str | Path) -> Dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _summarize_size_and_structure(stats_card: Dict[str, Any]) -> str:
+    """Create a short human-readable summary of sample size and structure.
+
+    Expected (but not strictly required) keys in stats_card:
+    - n_samples
+    - n_features
+    - grouping_keys (e.g., ['site', 'batch'])
+    """
+    n_samples = stats_card.get("n_samples")
+    n_features = stats_card.get("n_features")
+    grouping_keys = stats_card.get("grouping_keys", [])
+    parts: list[str] = []
+    if n_samples is not None and n_features is not None:
+        parts.append(f"{n_samples} samples × {n_features} features")
+    elif n_samples is not None:
+        parts.append(f"{n_samples} samples")
+    if grouping_keys:
+        parts.append(f"grouped by {', '.join(grouping_keys)}")
+    return "; ".join(parts) if parts else "See statistics card for details."
+
+
+def _summarize_data_risk_flags(llm_config: Dict[str, Any]) -> str:
+    flags = llm_config.get("data_risk_flags", {})
+    if not isinstance(flags, dict) or not flags:
+        return "No specific data risk flags recorded."
+    enabled = [k for k, v in flags.items() if v is True or v == "true"]
+    disabled = [k for k, v in flags.items() if v is False or v == "false"]
+    parts = []
+    if enabled:
+        parts.append("flags set: " + ", ".join(enabled))
+    if disabled:
+        parts.append("flags cleared: " + ", ".join(disabled))
+    return "; ".join(parts)
+
+
+def _summarize_subgroup_sizes(stats_card: Dict[str, Any]) -> str:
+    """Summarize subgroup sizes if available under 'subgroup_stats'."""
+    subgroup_stats = stats_card.get("subgroup_stats")
+    if not isinstance(subgroup_stats, dict):
+        return "Subgroup sizes not summarized; see statistics card."
+    parts = []
+    for attr, groups in subgroup_stats.items():
+        if not isinstance(groups, dict):
+            continue
+        desc = ", ".join(f"{g}={info.get('n', '?')}" for g, info in groups.items())
+        parts.append(f"{attr}: {desc}")
+    return "; ".join(parts) if parts else "Subgroup sizes not summarized; see statistics card."
+
+
+def _summarize_equity_risks(stats_card: Dict[str, Any]) -> str:
+    risks = stats_card.get("equity_risk_flags")
+    if not risks:
+        return "No explicit equity risk flags available; inspect subgroup results carefully."
+    if isinstance(risks, list):
+        return ", ".join(risks)
+    if isinstance(risks, dict):
+        return ", ".join(k for k, v in risks.items() if v)
+    return str(risks)
+
+
+def extract_audit_context(
+    dataset_card: Dict[str, Any],
+    statistics_card: Dict[str, Any],
+    llm_config: Dict[str, Any],
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Extract audit-relevant parameters and a shared template context.
+
+    Returns:
+        (audit_context, template_context)
+        - audit_context: structural info used for building audit profiles.
+        - template_context: flat/nested dict used for prompt template rendering.
+    """
+    study_profile = llm_config.get("study_profile", {})
+    user_profile = llm_config.get("user_profile", {})
+    governance = llm_config.get("governance", {})
+    resources = llm_config.get("resources", {})
+    data_risk_flags = llm_config.get("data_risk_flags", {})
+
+    outcome_variable = dataset_card.get("outcome_variable") or dataset_card.get(
+        "labels", {}
+    ).get("outcome")
+    outcome_type = dataset_card.get("outcome_type", "unknown")
+    candidate_predictors = dataset_card.get("candidate_predictors", [])
+    sensitive_attributes = governance.get(
+        "sensitive_attributes", dataset_card.get("sensitive_attributes", [])
+    )
+
+    # Basic task framing
+    task_framing = {
+        "outcome_variable": outcome_variable,
+        "outcome_type": outcome_type,
+        "primary_task": dataset_card.get("primary_task", "prediction"),
+        "intended_use": study_profile.get("intended_use"),
+        "risk_level": study_profile.get("risk_level", "unspecified"),
+    }
+
+    # Data characteristics
+    size_and_structure = _summarize_size_and_structure(statistics_card)
+    subgroup_size_summary = _summarize_subgroup_sizes(statistics_card)
+    equity_risk_summary = _summarize_equity_risks(statistics_card)
+    data_risk_flags_summary = _summarize_data_risk_flags(llm_config)
+
+    # Governance + resources
+    governance_constraints = {
+        "allowed_uses": governance.get("allowed_uses", []),
+        "forbidden_operations": governance.get("forbidden_operations", []),
+        "interpretability_requirements": governance.get(
+            "interpretability_requirements", []
+        ),
+    }
+    resource_constraints = resources
+
+    audit_context: Dict[str, Any] = {
+        "task_framing": task_framing,
+        "key_variables": {
+            "outcome_variable": outcome_variable,
+            "candidate_predictors": candidate_predictors,
+            "sensitive_attributes": sensitive_attributes,
+            "known_subgroups": dataset_card.get("known_subgroups", []),
+        },
+        "data_characteristics": {
+            "size_and_structure": size_and_structure,
+            "subgroup_size_summary": subgroup_size_summary,
+            "equity_risk_summary": equity_risk_summary,
+            "statistics_card": statistics_card,
+        },
+        "governance": governance_constraints,
+        "resources": resource_constraints,
+        "data_risk_flags": data_risk_flags,
+    }
+
+    # Context used by the template renderer (mirrors the spec placeholders)
+    template_context: Dict[str, Any] = {
+        "study_profile": study_profile,
+        "user_profile": user_profile,
+        "governance": governance,
+        "resources": resources,
+        "data_risk_flags": data_risk_flags,
+        "outcome_variable": outcome_variable,
+        "summary_of_size_and_structure": size_and_structure,
+        "subgroup_size_summary": subgroup_size_summary,
+        "equity_risk_summary": equity_risk_summary,
+        "data_risk_flags_summary": data_risk_flags_summary,
+        # Best-effort guess for grouping key to mention in templates:
+        "grouping_key": statistics_card.get("grouping_keys", ["site"])[0]
+        if statistics_card.get("grouping_keys")
+        else "site_or_batch",
+    }
+
+    return audit_context, template_context

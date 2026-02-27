@@ -1,0 +1,57 @@
+
+---
+
+## `support-protocol-2/config/sp2_config_example.yaml`
+
+```yaml
+# Example configuration for Support Protocol 2
+# Adjust paths and columns for your local deployment.
+
+data_root: "../data"
+
+# Main analysis table (e.g., one row per subject / episode / visit).
+main_table:
+  path: "main.parquet"
+  id_column: "patient_id"
+
+modalities:
+  tabular:
+    enabled: true
+    table: "main.parquet"
+    # Optional allow/deny lists:
+    # include_columns: []
+    # exclude_columns: []
+
+  timeseries:
+    enabled: false
+    table: "timeseries.parquet"
+    id_column: "patient_id"
+    time_column: "timestamp"
+    value_column: "value"
+    series_id_column: "series_id"  # e.g., sensor or variable name
+
+  image:
+    enabled: false
+    metadata_table: "image_metadata.parquet"
+    path_column: "path"
+    label_column: "label"
+    sensitive_columns: []  # e.g., ["site", "scanner_type"]
+
+  text:
+    enabled: false
+    table: "text.parquet"
+    id_column: "patient_id"
+    text_column: "note_text"
+    label_column: "label"
+
+  graph:
+    enabled: false
+    edge_list_path: "graph_edges.csv"
+    node_attribute_path: "graph_nodes.csv"
+    source_column: "source"
+    target_column: "target"
+
+sampling:
+  image_max_samples: 200
+  timeseries_max_series: 200
+  random_state: 42

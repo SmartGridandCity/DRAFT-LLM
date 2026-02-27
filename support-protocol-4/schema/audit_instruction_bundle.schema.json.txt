@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DRAFT LLM Instruction Bundle",
+  "type": "object",
+  "required": ["project_id", "sp0_version", "sp1_version", "sp2_version", "generated_at", "audits"],
+  "properties": {
+    "project_id": { "type": "string" },
+    "sp0_version": { "type": "string" },
+    "sp1_version": { "type": "string" },
+    "sp2_version": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "audits": {
+      "type": "object",
+      "patternProperties": {
+        "^(generalization|equity|stability)$": {
+          "type": "object",
+          "required": ["system_prompt", "user_prompt_templates", "profile"],
+          "properties": {
+            "system_prompt": { "type": "string" },
+            "user_prompt_templates": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            },
+            "profile": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

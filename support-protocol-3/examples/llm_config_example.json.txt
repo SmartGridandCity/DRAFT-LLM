@@ -1,0 +1,43 @@
+{
+  "project_id": "study_123",
+  "sp0_version": "sp0_v1.2",
+  "sp1_version": "sp1_v1.1",
+  "study_profile": {
+    "goal": "risk_prediction",
+    "analysis_type": "predictive",
+    "intended_use": "internal_decision_support",
+    "notes": "Example configuration for a high-dimensional survival prediction study."
+  },
+  "user_profile": {
+    "expertise": "intermediate",
+    "language": "python",
+    "interaction_style": "standard_explanations",
+    "code_style": "focused_examples"
+  },
+  "governance": {
+    "sensitive_attributes": ["gender", "race"],
+    "allowed_uses": ["fairness_evaluation_only"],
+    "privacy_rules": ["no_raw_values_in_outputs"],
+    "forbidden_operations": ["targeted_marketing_by_sensitive_group"],
+    "interpretability_requirements": ["justify_method_choice"]
+  },
+  "resources": {
+    "compute_budget": "medium",
+    "allowed_libraries": ["pandas", "numpy", "scikit-learn"],
+    "environment_constraints": ["offline_only"]
+  },
+  "data_risk_flags": {
+    "imbalance_flag": true,
+    "must_discuss_imbalance": true,
+    "missingness_flag": false,
+    "must_address_missingness": false,
+    "heterogeneity_flag": true,
+    "emphasize_heterogeneity": true
+  },
+  "base_system_prompt": "You are a data analysis assistant configured for this specific study.\n\nStudy profile\n- Goal: risk_prediction\n- Analysis type: predictive\n- Intended use: internal_decision_support\n\nUser profile\n- Expertise: intermediate\n- Programming language: python\n- Interaction style: standard_explanations\n- Code style: focused_examples\n\nGovernance and safety\n- Sensitive attributes: gender, race\n- Allowed uses: fairness_evaluation_only\n- Privacy rules: no_raw_values_in_outputs\n- Forbidden operations: targeted_marketing_by_sensitive_group\n- Interpretability requirements: justify_method_choice\n\nData-driven cues (from statistics card)\n- Key risk/complexity flags: imbalance_flag=True, must_discuss_imbalance=True, missingness_flag=False, must_address_missingness=False, heterogeneity_flag=True, emphasize_heterogeneity=True\n\nBehavioral requirements\n- Ground all proposals in the dataset card (SP0) and statistics card (SP1), as summarized in this configuration.\n- Respect all governance, privacy, and resource constraints.\n- Prioritize interpretable, resource-appropriate methods.\n- Explicitly discuss flagged risks (e.g., imbalance, missingness, heterogeneity) whenever they are relevant.\n",
+  "prompt_templates": {
+    "eda": "Using the current configuration, propose an initial exploratory data analysis (EDA) plan for risk_prediction in this predictive setting. Explicitly reference any data risk flags (e.g., imbalance, missingness, heterogeneity) and suggest checks that align with the stated governance and resource constraints.",
+    "modeling": "Propose baseline and candidate models consistent with the configuration, including preprocessing steps and evaluation strategies. Your suggestions should:\n- Respect the declared study goal and intended use.\n- Align with the user's expertise and preferred programming language.\n- Account for the data risk flags (e.g., outcome imbalance, small subgroups).\n- Stay within the allowed libraries and compute budget.",
+    "robustness": "Describe robustness checks and diagnostics appropriate for this study, given the configuration and the statistics card. Cover aspects such as:\n- Overfitting and generalization (e.g., resampling, permutation tests).\n- Fairness and subgroup performance, especially along sensitive attributes.\n- Stability of key features or patterns.\nExplain how each proposed check relates to the dataset's empirical properties."
+  }
+}

@@ -1,0 +1,22 @@
+"""
+Support Protocol 4 – Generation of Personalized Instructions for DRAFT Audits.
+
+This package exposes a single high-level function:
+
+    build_instruction_bundle(...)
+
+which is used by scripts/build_instruction_bundle.py.
+"""
+
+from .extractor import extract_audit_context
+from .profiles import build_audit_profiles
+from .prompts import generate_audit_prompts
+from .validate import validate_bundle, apply_governance_filters
+
+__all__ = [
+    "extract_audit_context",
+    "build_audit_profiles",
+    "generate_audit_prompts",
+    "validate_bundle",
+    "apply_governance_filters",
+]

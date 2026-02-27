@@ -1,0 +1,104 @@
+{
+  "dataset_card_id": "example_clinical_risk_dataset_v1",
+  "generated_at": "2025-01-01T12:00:00Z",
+  "eda_datamarts": {
+    "schema": {
+      "main_table": {
+        "n_rows": 10000,
+        "n_columns": 8
+      },
+      "variables": {
+        "n_total": 8,
+        "by_role": {
+          "id": 1,
+          "feature": 3,
+          "sensitive": 2,
+          "technical": 1,
+          "outcome": 1
+        }
+      },
+      "modalities": {
+        "tabular": true,
+        "timeseries": false,
+        "image": false,
+        "text": false,
+        "graph": false
+      }
+    },
+    "tabular": {
+      "n_rows": 10000,
+      "n_features": 3,
+      "n_outcomes": 1,
+      "missing_per_col": {
+        "patient_id": 0.0,
+        "age": 0.01,
+        "sex": 0.0,
+        "race": 0.02,
+        "comorbidity_score": 0.0,
+        "los": 0.0,
+        "site": 0.0,
+        "readmit_30d": 0.0
+      },
+      "numeric_summary": {
+        "age": {
+          "count": 9900.0,
+          "mean": 63.1,
+          "std": 14.2,
+          "min": 18.0,
+          "1%": 20.0,
+          "5%": 30.0,
+          "50%": 64.0,
+          "95%": 85.0,
+          "99%": 90.0,
+          "max": 95.0
+        }
+      },
+      "categorical_summary": {
+        "sex": {
+          "n_unique": 2,
+          "top_values": {
+            "F": 5200,
+            "M": 4800
+          },
+          "missing_rate": 0.0,
+          "entropy_approx": 0.999
+        }
+      },
+      "outcome_dist": {
+        "readmit_30d": {
+          "0": 0.8,
+          "1": 0.2
+        }
+      },
+      "group_outcomes": {
+        "sex": {
+          "F": {
+            "0": 0.78,
+            "1": 0.22
+          },
+          "M": {
+            "0": 0.82,
+            "1": 0.18
+          }
+        }
+      },
+      "correlations": {
+        "age": {
+          "age": 1.0
+        }
+      },
+      "pca": {
+        "n_components": 3,
+        "explained_variance_ratio": [0.6, 0.25, 0.15]
+      },
+      "mutual_information": {
+        "age": 0.01
+      },
+      "feature_importances": {
+        "age": 0.4,
+        "comorbidity_score": 0.35,
+        "los": 0.25
+      }
+    }
+  }
+}

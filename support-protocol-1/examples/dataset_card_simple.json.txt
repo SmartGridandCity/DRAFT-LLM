@@ -1,0 +1,183 @@
+{
+  "card_metadata": {
+    "card_id": "LUNG_STUDY_V1",
+    "version": "1.0.0",
+    "last_updated": "2026-02-26",
+    "prepared_by": "A. Smith",
+    "approved_by": "B. Jones",
+    "data_freeze_date": "2025-12-31",
+    "notes": "Single-center baseline lung cancer cohort."
+  },
+  "study_overview": {
+    "title": "Lung Cancer Survival Study",
+    "primary_question": "Can baseline clinical and genomic features predict 3-year overall survival?",
+    "intended_use": "exploratory",
+    "intended_use_details": "Exploratory biomarker discovery and risk stratification.",
+    "task_types": ["time_to_event"],
+    "secondary_endpoints": ["30-day mortality"],
+    "regulatory_context": "Not intended for immediate clinical deployment."
+  },
+  "cohort": {
+    "inclusion_criteria": [
+      "Age >= 18",
+      "Histologically confirmed NSCLC"
+    ],
+    "exclusion_criteria": [
+      "Prior malignancy within 5 years",
+      "Missing baseline CT scan"
+    ],
+    "time_origin": "Date of diagnosis",
+    "cohort_size_estimate": 500,
+    "multi_dataset_roles": [
+      {
+        "dataset_id": "DS1",
+        "role": "discovery"
+      }
+    ]
+  },
+  "data_sources": [
+    {
+      "dataset_id": "DS1",
+      "description": "Single-center NSCLC baseline cohort.",
+      "is_longitudinal": false,
+      "tables": [
+        {
+          "table_id": "clinical_baseline",
+          "table_name": "clinical_baseline",
+          "approx_n_rows": 500,
+          "approx_n_columns": 40,
+          "linkage_keys": ["patient_id"],
+          "processing_level": "normalized",
+          "time_role": "baseline"
+        },
+        {
+          "table_id": "gene_expression",
+          "table_name": "rna_seq_counts_norm",
+          "approx_n_rows": 500,
+          "approx_n_columns": 20000,
+          "linkage_keys": ["patient_id", "sample_id"],
+          "processing_level": "normalized",
+          "time_role": "baseline"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "dataset_id": "DS1",
+      "table_id": "clinical_baseline",
+      "name": "patient_id",
+      "description": "Unique patient identifier",
+      "canonical_role": "id",
+      "dtype": "text",
+      "allowed_values": [],
+      "is_derived": false,
+      "use_as_predictor": false,
+      "leakage_risk": "none"
+    },
+    {
+      "dataset_id": "DS1",
+      "table_id": "clinical_baseline",
+      "name": "age_at_dx",
+      "description": "Age at diagnosis (years)",
+      "canonical_role": "feature",
+      "dtype": "numeric",
+      "allowed_values": [],
+      "is_derived": false,
+      "use_as_predictor": true,
+      "leakage_risk": "none"
+    },
+    {
+      "dataset_id": "DS1",
+      "table_id": "clinical_baseline",
+      "name": "sex",
+      "description": "Recorded legal sex",
+      "canonical_role": "sensitive_attribute",
+      "dtype": "categorical",
+      "allowed_values": ["male", "female", "other"],
+      "is_derived": false,
+      "use_as_predictor": true,
+      "leakage_risk": "possible"
+    },
+    {
+      "dataset_id": "DS1",
+      "table_id": "outcomes",
+      "name": "os_time_days",
+      "description": "Time from diagnosis to death or censoring (days)",
+      "canonical_role": "outcome",
+      "dtype": "numeric",
+      "allowed_values": [],
+      "is_derived": true,
+      "use_as_predictor": false,
+      "leakage_risk": "high"
+    },
+    {
+      "dataset_id": "DS1",
+      "table_id": "outcomes",
+      "name": "os_event",
+      "description": "Overall survival event indicator (1 = death, 0 = censored)",
+      "canonical_role": "outcome",
+      "dtype": "binary",
+      "allowed_values": ["0", "1"],
+      "is_derived": true,
+      "use_as_predictor": false,
+      "leakage_risk": "high"
+    }
+  ],
+  "outcomes": [
+    {
+      "name": "overall_survival_3yr",
+      "description": "3-year overall survival, derived from os_time_days and os_event.",
+      "task_type": "time_to_event",
+      "time_horizon": "3-year OS",
+      "event_label": "1",
+      "non_event_label": "0",
+      "time_column": "os_time_days",
+      "censoring_column": "os_event",
+      "label_source": "registry",
+      "label_quality_summary": "Linked to institutional cancer registry with manual QC on a random subset.",
+      "primary_for_draft": true
+    },
+    {
+      "name": "mortality_30d",
+      "description": "30-day all-cause mortality from diagnosis.",
+      "task_type": "binary",
+      "time_horizon": "30 days",
+      "event_label": "1",
+      "non_event_label": "0",
+      "label_source": "registry",
+      "label_quality_summary": "Derived from overall_survival_3yr; may be noisy for patients lost to follow-up.",
+      "primary_for_draft": false
+    }
+  ],
+  "sensitive_attributes": [
+    {
+      "variable_name": "sex",
+      "dataset_id": "DS1",
+      "table_id": "clinical_baseline",
+      "governance_status": "required",
+      "reporting_constraints": "Minimum cell size n >= 10 per sex category in any reported table.",
+      "subgroups_of_interest": ["female", "male"]
+    }
+  ],
+  "constraints_and_priorities": {
+    "expected_sample_size": 500,
+    "approx_feature_dimensionality": 20040,
+    "compute_environment": "HPC_cluster",
+    "access_limitations": "Data must remain within institutional secure enclave; only aggregate results may be exported.",
+    "analysis_priorities": [
+      "predictive_performance",
+      "fairness",
+      "stability"
+    ],
+    "required_metrics": [
+      "C-index",
+      "Brier score",
+      "calibration"
+    ],
+    "forbidden_operations": [
+      "Use of race as a predictor",
+      "Use of post-outcome variables as features"
+    ]
+  }
+}

@@ -1,0 +1,402 @@
+
+---
+
+## `schema/dataset_card.schema.json`
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/draft-llm/dataset_card.schema.json",
+  "title": "DRAFT-LLM Dataset Card",
+  "description": "Machine-readable dataset card used to parameterize DRAFT-LLM audits.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["card_metadata", "study_overview", "cohort", "data_sources", "variables", "outcomes"],
+  "properties": {
+    "card_metadata": {
+      "type": "object",
+      "description": "Provenance and versioning information for this dataset card.",
+      "additionalProperties": false,
+      "required": ["card_id", "version", "last_updated"],
+      "properties": {
+        "card_id": {
+          "type": "string",
+          "description": "Unique identifier for this dataset card (e.g., STUDY_SHORT_NAME_v1)."
+        },
+        "version": {
+          "type": "string",
+          "description": "Semantic version of the dataset card (e.g., 1.0.0)."
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the card was last updated (YYYY-MM-DD)."
+        },
+        "prepared_by": {
+          "type": "string",
+          "description": "Name or identifier of the primary preparer."
+        },
+        "approved_by": {
+          "type": "string",
+          "description": "Name or identifier of the approver (if applicable)."
+        },
+        "data_freeze_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of the data freeze used for this analysis (if applicable)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Free-text notes about this card."
+        }
+      }
+    },
+
+    "study_overview": {
+      "type": "object",
+      "description": "High-level description of the study and prediction task(s).",
+      "additionalProperties": false,
+      "required": ["title", "primary_question", "intended_use", "task_types"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Human-readable study title."
+        },
+        "primary_question": {
+          "type": "string",
+          "description": "Primary scientific question or objective."
+        },
+        "intended_use": {
+          "type": "string",
+          "enum": ["exploratory", "decision_support", "clinical_actionable", "other"],
+          "description": "Intended use category of the model."
+        },
+        "intended_use_details": {
+          "type": "string",
+          "description": "Free-text elaboration of intended use."
+        },
+        "task_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["binary_classification", "multiclass_classification", "regression", "time_to_event", "multi_label", "multi_task", "other"]
+          },
+          "minItems": 1,
+          "description": "Prediction task type(s) for the primary analysis."
+        },
+        "secondary_endpoints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Names or brief descriptions of secondary endpoints."
+        },
+        "regulatory_context": {
+          "type": "string",
+          "description": "Any regulatory or clinical decision context relevant to the model."
+        }
+      }
+    },
+
+    "cohort": {
+      "type": "object",
+      "description": "Definition of the analysis cohort.",
+      "additionalProperties": false,
+      "required": ["time_origin"],
+      "properties": {
+        "inclusion_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of inclusion criteria."
+        },
+        "exclusion_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of exclusion criteria."
+        },
+        "time_origin": {
+          "type": "string",
+          "description": "Definition of time origin (e.g., diagnosis, surgery date)."
+        },
+        "cohort_size_estimate": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Approximate number of individuals or units in the analysis cohort."
+        },
+        "multi_dataset_roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["dataset_id", "role"],
+            "properties": {
+              "dataset_id": { "type": "string" },
+              "role": {
+                "type": "string",
+                "enum": ["discovery", "internal_validation", "external_validation", "other"]
+              }
+            }
+          },
+          "description": "Roles for each dataset if multiple datasets are used."
+        }
+      }
+    },
+
+    "data_sources": {
+      "type": "array",
+      "description": "List of datasets and tables/files used in the analysis.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dataset_id", "description", "tables"],
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "description": "Identifier for this dataset (used elsewhere in the card)."
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description (e.g., center, registry, trial arm)."
+          },
+          "is_longitudinal": {
+            "type": "boolean",
+            "description": "Whether the dataset includes time-varying measurements."
+          },
+          "tables": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["table_id", "table_name", "approx_n_rows", "approx_n_columns", "processing_level"],
+              "properties": {
+                "table_id": { "type": "string" },
+                "table_name": { "type": "string" },
+                "approx_n_rows": { "type": "integer", "minimum": 0 },
+                "approx_n_columns": { "type": "integer", "minimum": 0 },
+                "linkage_keys": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Column names used to link this table to others (e.g., patient_id)."
+                },
+                "processing_level": {
+                  "type": "string",
+                  "enum": ["raw", "normalized", "engineered_features", "embedding", "other"],
+                  "description": "High-level processing status of this table."
+                },
+                "time_role": {
+                  "type": "string",
+                  "enum": ["baseline", "longitudinal", "outcome_only", "not_applicable"],
+                  "description": "Role of this table in relation to time."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "variables": {
+      "type": "array",
+      "description": "Variable-level metadata across all tables.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dataset_id", "table_id", "name", "canonical_role", "dtype"],
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "description": "Dataset identifier this variable belongs to."
+          },
+          "table_id": {
+            "type": "string",
+            "description": "Table identifier this variable belongs to."
+          },
+          "name": {
+            "type": "string",
+            "description": "Column name."
+          },
+          "description": {
+            "type": "string",
+            "description": "Short human-readable description."
+          },
+          "canonical_role": {
+            "type": "string",
+            "enum": [
+              "id",
+              "outcome",
+              "feature",
+              "sensitive_attribute",
+              "technical_batch",
+              "time_variable",
+              "grouping_cluster",
+              "other"
+            ]
+          },
+          "dtype": {
+            "type": "string",
+            "enum": ["numeric", "categorical", "ordinal", "datetime", "text", "binary", "other"]
+          },
+          "allowed_values": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Enumerated allowed values (for categorical/ordinal)."
+          },
+          "is_derived": {
+            "type": "boolean",
+            "description": "Whether this variable is derived (not directly observed)."
+          },
+          "use_as_predictor": {
+            "type": "boolean",
+            "description": "Whether this variable is allowed to be used as a predictor."
+          },
+          "leakage_risk": {
+            "type": "string",
+            "enum": ["none", "possible", "high"],
+            "description": "Risk that using this variable as a predictor would leak outcome information."
+          }
+        }
+      }
+    },
+
+    "outcomes": {
+      "type": "array",
+      "description": "Definitions of outcomes and label regimes.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "task_type", "primary_for_draft"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the outcome (e.g., overall_survival_3yr)."
+          },
+          "description": {
+            "type": "string",
+            "description": "Concise definition of the outcome."
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "binary",
+              "multiclass",
+              "continuous",
+              "time_to_event"
+            ]
+          },
+          "time_horizon": {
+            "type": "string",
+            "description": "Relevant time horizon (e.g., 3-year OS, 30-day mortality)."
+          },
+          "event_label": {
+            "type": "string",
+            "description": "Code representing the event (for binary/multiclass)."
+          },
+          "non_event_label": {
+            "type": "string",
+            "description": "Code representing the non-event (for binary)."
+          },
+          "time_column": {
+            "type": "string",
+            "description": "Name of time-to-event column (for survival outcomes)."
+          },
+          "censoring_column": {
+            "type": "string",
+            "description": "Name of censoring indicator column (for survival outcomes)."
+          },
+          "label_source": {
+            "type": "string",
+            "enum": ["registry", "chart_review", "algorithmic_extraction", "other"],
+            "description": "Source of labels."
+          },
+          "label_quality_summary": {
+            "type": "string",
+            "description": "Summary of label quality, adjudication procedures, and known biases."
+          },
+          "primary_for_draft": {
+            "type": "boolean",
+            "description": "Whether this outcome is primary for DRAFT audits."
+          }
+        }
+      }
+    },
+
+    "sensitive_attributes": {
+      "type": "array",
+      "description": "Sensitive attributes and fairness-relevant subgroup definitions.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["variable_name", "governance_status"],
+        "properties": {
+          "variable_name": {
+            "type": "string",
+            "description": "Name of the variable representing a sensitive attribute or subgroup axis."
+          },
+          "dataset_id": {
+            "type": "string",
+            "description": "Dataset identifier (if applicable)."
+          },
+          "table_id": {
+            "type": "string",
+            "description": "Table identifier (if applicable)."
+          },
+          "governance_status": {
+            "type": "string",
+            "enum": ["required", "recommended", "optional", "prohibited"]
+          },
+          "reporting_constraints": {
+            "type": "string",
+            "description": "Constraints such as minimum cell sizes or aggregation rules."
+          },
+          "subgroups_of_interest": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Specific subgroups of special concern for fairness/equity."
+          }
+        }
+      }
+    },
+
+    "constraints_and_priorities": {
+      "type": "object",
+      "description": "Practical constraints and analysis priorities.",
+      "additionalProperties": false,
+      "properties": {
+        "expected_sample_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "approx_feature_dimensionality": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compute_environment": {
+          "type": "string",
+          "enum": ["workstation", "HPC_cluster", "cloud", "other"]
+        },
+        "access_limitations": {
+          "type": "string",
+          "description": "Description of secure enclave, export restrictions, etc."
+        },
+        "analysis_priorities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["predictive_performance", "interpretability", "fairness", "stability", "external_generalizability"]
+          }
+        },
+        "required_metrics": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "forbidden_operations": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Explicitly forbidden modeling choices (e.g., using race as a predictor)."
+        }
+      }
+    }
+  }
+}

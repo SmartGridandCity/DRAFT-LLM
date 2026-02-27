@@ -1,0 +1,48 @@
+{
+  "id": "example_clinical_risk_dataset_v1",
+  "name": "Example Clinical Risk Dataset",
+  "description": "Toy example dataset card for demonstrating Support Protocol 2.",
+  "prediction_task": {
+    "primary_question": "Predict 30-day hospital readmission risk.",
+    "task_type": "classification",
+    "intended_use": "Risk stratification and model benchmarking."
+  },
+  "cohort": {
+    "population": "Adult inpatients at a single tertiary care center.",
+    "inclusion_criteria": "Age >= 18 years, index hospitalization.",
+    "exclusion_criteria": "Deaths during index hospitalization."
+  },
+  "modalities": {
+    "main": "tabular",
+    "notes": "text"
+  },
+  "variables": [
+    { "name": "patient_id", "role": "id" },
+    { "name": "age", "role": "feature" },
+    { "name": "sex", "role": "sensitive" },
+    { "name": "race", "role": "sensitive" },
+    { "name": "comorbidity_score", "role": "feature" },
+    { "name": "los", "role": "feature" },
+    { "name": "site", "role": "technical" },
+    { "name": "readmit_30d", "role": "outcome" }
+  ],
+  "outcomes": [
+    {
+      "name": "readmit_30d",
+      "type": "binary",
+      "positive_definition": "Readmitted to any hospital within 30 days of discharge."
+    }
+  ],
+  "sensitive_attributes": [
+    { "name": "sex", "type": "categorical" },
+    { "name": "race", "type": "categorical" }
+  ],
+  "technical_variables": [
+    { "name": "site", "description": "Hospital site indicator." }
+  ],
+  "data_access": {
+    "metadata_only": false,
+    "notes": "Example only; not linked to real patients."
+  },
+  "version": "1.0.0"
+}

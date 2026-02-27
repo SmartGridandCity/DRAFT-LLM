@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StatisticsCard",
+  "type": "object",
+  "required": ["dataset_card_id", "generated_at", "eda_datamarts"],
+  "properties": {
+    "dataset_card_id": {
+      "type": "string",
+      "description": "Identifier of the dataset card this statistics card is derived from."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when statistics were generated."
+    },
+    "eda_datamarts": {
+      "type": "object",
+      "description": "Per-modality statistics and diagnostics.",
+      "properties": {
+        "schema": {
+          "type": "object",
+          "description": "Lightweight summary of tables, row counts, and modalities."
+        },
+        "tabular": {
+          "type": "object",
+          "description": "Global and advanced statistics for tabular data.",
+          "properties": {
+            "n_rows": { "type": "integer" },
+            "n_features": { "type": "integer" },
+            "n_outcomes": { "type": "integer" },
+            "missing_per_col": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            },
+            "numeric_summary": {
+              "type": "object",
+              "description": "Output of pandas.DataFrame.describe().to_dict() for numeric cols."
+            },
+            "categorical_summary": {
+              "type": "object",
+              "description": "Per-column categorical summary including entropy approximations."
+            },
+            "outcome_dist": {
+              "type": "object",
+              "description": "Outcome distribution per outcome column.",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": { "type": "number" }
+              }
+            },
+            "group_outcomes": {
+              "type": "object",
+              "description": "Outcome distributions stratified by sensitive attributes.",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "correlations": {
+              "type": "object",
+              "description": "Correlation matrix for numeric features."
+            },
+            "pca": {
+              "type": "object",
+              "description": "PCA explained variance and loadings summaries."
+            },
+            "mutual_information": {
+              "type": "object",
+              "description": "Mutual information between features and outcomes."
+            },
+            "feature_importances": {
+              "type": "object",
+              "description": "Random forest-based surrogate feature importance."
+            }
+          },
+          "additionalProperties": true
+        },
+        "timeseries": {
+          "type": "object",
+          "description": "Global and advanced statistics for time series data.",
+          "additionalProperties": true
+        },
+        "image": {
+          "type": "object",
+          "description": "Global and entropy-based statistics for image/video data.",
+          "additionalProperties": true
+        },
+        "text": {
+          "type": "object",
+          "description": "Global and lexical/embedding-based statistics for text data.",
+          "additionalProperties": true
+        },
+        "graph": {
+          "type": "object",
+          "description": "Graph-level statistics and structural diagnostics.",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

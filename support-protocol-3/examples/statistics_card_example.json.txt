@@ -1,0 +1,31 @@
+{
+  "version": "sp1_v1.0",
+  "global": {
+    "n_samples": 500,
+    "n_features": 20000
+  },
+  "outcomes_type": "binary",
+  "outcomes": {
+    "five_year_survival": {
+      "class_proportions": {
+        "alive": 0.3,
+        "deceased": 0.7
+      }
+    }
+  },
+  "features": {
+    "gender": {
+      "missing_rate": 0.0
+    },
+    "race": {
+      "missing_rate": 0.05
+    },
+    "gene_expression_block": {
+      "missing_rate": 0.01
+    }
+  },
+  "heterogeneity": {
+    "has_strong_subgroups": true,
+    "notes": "Subgroups visible along stage and batch indicators."
+  }
+}

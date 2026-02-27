@@ -1,0 +1,6 @@
+{
+  "enabled_audits": ["generalization", "equity", "stability"],
+  "priority_order": ["generalization", "equity", "stability"],
+  "priority_subgroups": ["race", "gender"],
+  "notes": "Example user focus: run generalization first, then equity, then stability."
+}

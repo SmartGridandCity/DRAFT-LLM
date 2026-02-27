@@ -1,0 +1,40 @@
+
+---
+
+## `config/sp3_config_example.yaml`
+
+```yaml
+# Example configuration for Support Protocol 3 itself.
+# This file controls how the LLM configuration is derived,
+# not the content of the final LLM config.
+
+project_defaults:
+  # Used if not provided in the dataset card or CLI
+  default_project_id: "example_study"
+  default_intended_use: "internal_research"
+
+resources:
+  # Coarse resource budget classification
+  compute_budget: "medium"        # one of: low, medium, high
+  environment_constraints:
+    - "offline_only"
+  allowed_libraries:
+    - "pandas"
+    - "numpy"
+    - "scikit-learn"
+
+interaction_defaults:
+  expertise: "intermediate"       # fallback if not specified in SP0
+  language: "python"
+  interaction_style: "standard_explanations"
+  code_style: "focused_examples"
+
+governance_defaults:
+  privacy_rules:
+    - "no_raw_values_in_outputs"
+  interpretability_requirements:
+    - "justify_method_choice"
+
+risk_thresholds:
+  imbalance_ratio_high: 0.8       # if max_class_prop >= this, flag imbalance
+  missingness_rate_high: 0.2      # if any feature missing_rate >= this, flag missingness

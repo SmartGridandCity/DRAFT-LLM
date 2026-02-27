@@ -1,0 +1,82 @@
+import json
+import re
+from pathlib import Path
+from typing import Any, Dict, Tuple
+
+
+PLACEHOLDER_RE = re.compile(r"{{\s*([\w\.]+)\s*}}")
+
+
+def _lookup_path(path: str, context: Dict[str, Any]) -> str:
+    """Resolve 'a.b.c' into context['a']['b']['c'] if possible."""
+    current: Any = context
+    for part in path.split("."):
+        if isinstance(current, dict) and part in current:
+            current = current[part]
+        else:
+            # Leave unresolved placeholder as-is to signal missing mapping
+            return "{{" + path + "}}"
+    return str(current)
+
+
+def render_template(template: str, context: Dict[str, Any]) -> str:
+    """Minimal Jinja-style {{path.to.key}} renderer."""
+    def _repl(match: re.Match) -> str:
+        path = match.group(1)
+        return _lookup_path(path, context)
+
+    return PLACEHOLDER_RE.sub(_repl, template)
+
+
+def load_audit_templates(path: str | Path) -> Dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def generate_audit_prompts(
+    llm_config: Dict[str, Any],
+    audit_profiles: Dict[str, Dict[str, Any]],
+    audit_templates: Dict[str, Any],
+    template_context: Dict[str, Any],
+    enabled_audits: list[str] | None = None,
+) -> Dict[str, Dict[str, Any]]:
+    """Generate system prompts and user prompt templates for each audit type."""
+    if enabled_audits is None:
+        enabled_audits = list(audit_profiles.keys())
+
+    base_system_prompt: str = llm_config.get("base_system_prompt", "").strip()
+    prompts: Dict[str, Dict[str, Any]] = {}
+
+    for audit_name in enabled_audits:
+        if audit_name not in audit_profiles:
+            continue
+        audit_template = audit_templates.get(audit_name)
+        if not audit_template:
+            continue
+
+        system_template: str = audit_template.get("system_prompt_template", "")
+        user_templates: Dict[str, str] = audit_template.get(
+            "user_prompt_templates", {}
+        )
+
+        # Render audit-specific extension
+        audit_system_extension = render_template(system_template, template_context)
+
+        # Combine base system prompt with audit-specific instructions
+        if base_system_prompt:
+            full_system_prompt = base_system_prompt.rstrip() + "\n\n" + audit_system_extension
+        else:
+            full_system_prompt = audit_system_extension
+
+        # Render user templates
+        rendered_users: Dict[str, str] = {
+            name: render_template(tmpl, template_context)
+            for name, tmpl in user_templates.items()
+        }
+
+        prompts[audit_name] = {
+            "system_prompt": full_system_prompt,
+            "user_prompt_templates": rendered_users,
+        }
+
+    return prompts

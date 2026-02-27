@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LLM Configuration Schema (Support Protocol 3)",
+  "type": "object",
+  "required": [
+    "project_id",
+    "sp0_version",
+    "sp1_version",
+    "study_profile",
+    "user_profile",
+    "governance",
+    "resources",
+    "data_risk_flags",
+    "base_system_prompt",
+    "prompt_templates"
+  ],
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "Identifier for the study/project."
+    },
+    "sp0_version": {
+      "type": "string",
+      "description": "Version or hash of the dataset card (Support Protocol 0)."
+    },
+    "sp1_version": {
+      "type": "string",
+      "description": "Version or hash of the statistics card (Support Protocol 1)."
+    },
+    "study_profile": {
+      "type": "object",
+      "required": ["goal", "analysis_type", "intended_use"],
+      "properties": {
+        "goal": {
+          "type": "string",
+          "description": "High-level study goal (e.g., risk_prediction, exploration)."
+        },
+        "analysis_type": {
+          "type": "string",
+          "description": "Type of analysis (e.g., predictive, exploratory, explanatory, robustness_focused)."
+        },
+        "intended_use": {
+          "type": "string",
+          "description": "Intended use context (e.g., internal_research, internal_decision_support, external_high_stakes)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional free-text notes about the study profile."
+        }
+      },
+      "additionalProperties": true
+    },
+    "user_profile": {
+      "type": "object",
+      "required": ["expertise", "language", "interaction_style", "code_style"],
+      "properties": {
+        "expertise": {
+          "type": "string",
+          "description": "User expertise level (e.g., novice, intermediate, expert)."
+        },
+        "language": {
+          "type": "string",
+          "description": "Preferred programming language (e.g., python, R)."
+        },
+        "interaction_style": {
+          "type": "string",
+          "description": "Preferred interaction style (e.g., standard_explanations, highly_didactic, concise)."
+        },
+        "code_style": {
+          "type": "string",
+          "description": "Preferred style of code examples (e.g., focused_examples, full_scripts)."
+        }
+      },
+      "additionalProperties": true
+    },
+    "governance": {
+      "type": "object",
+      "required": ["sensitive_attributes", "allowed_uses", "privacy_rules", "forbidden_operations"],
+      "properties": {
+        "sensitive_attributes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of sensitive or protected attributes available in the data."
+        },
+        "allowed_uses": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Allowed uses for this LLM assistance within the study."
+        },
+        "privacy_rules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Constraints aimed at protecting privacy (e.g., no_raw_values_in_outputs)."
+        },
+        "forbidden_operations": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Explicitly forbidden operations (e.g., targeted_marketing_by_sensitive_group)."
+        },
+        "interpretability_requirements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Interpretability requirements (e.g., justify_method_choice)."
+        }
+      },
+      "additionalProperties": true
+    },
+    "resources": {
+      "type": "object",
+      "required": ["compute_budget", "allowed_libraries", "environment_constraints"],
+      "properties": {
+        "compute_budget": {
+          "type": "string",
+          "description": "Coarse compute budget (e.g., low, medium, high)."
+        },
+        "allowed_libraries": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Libraries the LLM is allowed to suggest."
+        },
+        "environment_constraints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Constraints such as offline_only or no_external_apis."
+        }
+      },
+      "additionalProperties": true
+    },
+    "data_risk_flags": {
+      "type": "object",
+      "properties": {
+        "imbalance_flag": { "type": "boolean" },
+        "must_discuss_imbalance": { "type": "boolean" },
+        "missingness_flag": { "type": "boolean" },
+        "must_address_missingness": { "type": "boolean" },
+        "heterogeneity_flag": { "type": "boolean" },
+        "emphasize_heterogeneity": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "base_system_prompt": {
+      "type": "string",
+      "description": "The fully instantiated base system prompt string."
+    },
+    "prompt_templates": {
+      "type": "object",
+      "required": ["eda", "modeling", "robustness"],
+      "properties": {
+        "eda": { "type": "string" },
+        "modeling": { "type": "string" },
+        "robustness": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

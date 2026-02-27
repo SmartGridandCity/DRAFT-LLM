@@ -1,0 +1,29 @@
+{
+  "project_id": "lung_cancer_study",
+  "version": "sp0_v1.0",
+  "task": {
+    "goal": "risk_prediction",
+    "analysis_type": "predictive",
+    "outcome_variable": "five_year_survival",
+    "outcome_type": "binary"
+  },
+  "intended_use": "internal_decision_support",
+  "data_summary": {
+    "n_samples": 500,
+    "n_features": 20000
+  },
+  "user_profile": {
+    "expertise": "intermediate",
+    "language": "python",
+    "interaction_style": "standard_explanations",
+    "code_style": "focused_examples"
+  },
+  "governance": {
+    "sensitive_attributes": ["gender", "race"],
+    "allowed_uses": ["fairness_evaluation_only"],
+    "privacy_rules": ["no_raw_values_in_outputs"],
+    "forbidden_operations": ["targeted_marketing_by_sensitive_group"],
+    "interpretability_requirements": ["justify_method_choice"]
+  },
+  "study_notes": "High-dimensional gene expression with clinical covariates for survival prediction."
+}

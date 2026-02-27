@@ -1,0 +1,140 @@
+from typing import Any, Dict
+
+
+def _choose_metrics(outcome_type: str, risk_level: str) -> Dict[str, Any]:
+    """Simple heuristic for primary/secondary metrics."""
+    outcome_type = (outcome_type or "").lower()
+    risk_level = (risk_level or "").lower()
+
+    if "regression" in outcome_type:
+        primary = ["rmse", "mae"]
+        secondary = ["r2"]
+    elif "multiclass" in outcome_type:
+        primary = ["macro_f1"]
+        secondary = ["accuracy"]
+    else:  # default to binary classification
+        primary = ["roc_auc"]
+        secondary = ["average_precision", "brier_score"]
+
+    if "high" in risk_level:
+        # For high-stakes, emphasize calibration
+        secondary = list(dict.fromkeys(secondary + ["calibration_curve", "expected_calibration_error"]))
+
+    return {"primary": primary, "secondary": secondary}
+
+
+def build_audit_profiles(
+    audit_context: Dict[str, Any],
+    enabled_audits: list[str] | None = None,
+) -> Dict[str, Dict[str, Any]]:
+    """Build study-specific audit profiles for each enabled audit type.
+
+    Each profile encodes 'what an ideal audit would examine', but not text.
+    """
+    task = audit_context["task_framing"]
+    variables = audit_context["key_variables"]
+    data_char = audit_context["data_characteristics"]
+    gov = audit_context["governance"]
+    resources = audit_context["resources"]
+    risk_flags = audit_context["data_risk_flags"]
+
+    if enabled_audits is None:
+        enabled_audits = ["generalization", "equity", "stability"]
+
+    profiles: Dict[str, Dict[str, Any]] = {}
+
+    # --- 5.1 Generalization audit profile ---
+    if "generalization" in enabled_audits:
+        metrics = _choose_metrics(task["outcome_type"], task["risk_level"])
+        splits: list[Dict[str, Any]] = [
+            {
+                "name": "kfold_stratified",
+                "n_splits": 5,
+                "group_key": None,
+                "description": "Stratified k-fold CV preserving outcome distribution.",
+            }
+        ]
+        # If grouping structure exists, propose grouped CV as alternative
+        stats_card = data_char["statistics_card"]
+        grouping_keys = stats_card.get("grouping_keys", [])
+        if grouping_keys:
+            splits.append(
+                {
+                    "name": "grouped_kfold",
+                    "n_splits": 5,
+                    "group_key": grouping_keys[0],
+                    "description": f"Group-wise CV using {grouping_keys[0]} to avoid leakage.",
+                }
+            )
+
+        profiles["generalization"] = {
+            "description": "Assess overfitting and illusory performance.",
+            "candidate_splits": splits,
+            "metrics": metrics,
+            "resource_constraints": resources,
+            "must_discuss": [
+                k for k, v in risk_flags.items() if v and "imbalance" in k
+            ],
+        }
+
+    # --- 5.2 Equity audit profile ---
+    if "equity" in enabled_audits:
+        sensitive = variables["sensitive_attributes"]
+        subgrouping_schemes: list[Dict[str, Any]] = []
+        if sensitive:
+            for attr in sensitive:
+                subgrouping_schemes.append(
+                    {
+                        "type": "single_attribute",
+                        "attribute": attr,
+                        "description": f"Subgroups defined by {attr} alone.",
+                    }
+                )
+            if len(sensitive) >= 2:
+                subgrouping_schemes.append(
+                    {
+                        "type": "intersectional",
+                        "attributes": sensitive[:2],
+                        "description": f"Intersectional subgroups of {sensitive[0]} × {sensitive[1]}.",
+                    }
+                )
+
+        profiles["equity"] = {
+            "description": "Assess hidden failures and performance disparities across subgroups.",
+            "sensitive_attributes": sensitive,
+            "subgrouping_schemes": subgrouping_schemes,
+            "fairness_metrics": {
+                "performance": ["accuracy", "macro_f1"],
+                "calibration": ["calibration_curve", "brier_score"],
+            },
+            "reporting_constraints": {
+                "forbidden_operations": gov["forbidden_operations"],
+                "allowed_uses": gov["allowed_uses"],
+            },
+        }
+
+    # --- 5.3 Stability / robustness audit profile ---
+    if "stability" in enabled_audits:
+        compute_budget = (resources.get("compute_budget") or "medium").lower()
+        if compute_budget == "low":
+            n_resamples = 10
+        elif compute_budget == "high":
+            n_resamples = 100
+        else:
+            n_resamples = 30
+
+        profiles["stability"] = {
+            "description": "Assess stability of model features and robustness of learned signal.",
+            "stability_notions": [
+                "feature_importance_stability",
+                "performance_stability_across_splits",
+                "sensitivity_to_modeling_choices",
+            ],
+            "design_levers": {
+                "n_resamples": n_resamples,
+                "compare_across": ["folds", "time", "site", "sensitive_subgroups"],
+            },
+            "resource_constraints": resources,
+        }
+
+    return profiles

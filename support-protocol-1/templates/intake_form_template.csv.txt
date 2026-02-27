@@ -1,0 +1,36 @@
+section,field_name,field_description,example_value,required
+card_metadata,card_id,Unique identifier for the dataset card (no spaces),LUNG_STUDY_V1,yes
+card_metadata,version,Semantic version of the dataset card,1.0.0,yes
+card_metadata,last_updated,Date last updated (YYYY-MM-DD),2026-02-26,yes
+card_metadata,prepared_by,Name or identifier of the preparer,Dr. A. Smith,yes
+card_metadata,approved_by,Name or identifier of the approver (optional),Dr. B. Jones,no
+card_metadata,data_freeze_date,Data freeze date used for this analysis (YYYY-MM-DD),2025-12-31,no
+
+study_overview,title,Human-readable study title,Lung Cancer Survival Study,yes
+study_overview,primary_question,Primary scientific question or objective,Can baseline clinical and genomic data predict 3-year OS?,yes
+study_overview,intended_use,Intended use category (exploratory / decision_support / clinical_actionable / other),exploratory,yes
+study_overview,intended_use_details,Additional details about intended use,Exploratory biomarker discovery and risk stratification,no
+study_overview,task_types,Comma-separated prediction task types (binary_classification, multiclass_classification, regression, time_to_event, multi_label, multi_task, other),time_to_event,yes
+study_overview,secondary_endpoints,Comma-separated list of secondary endpoints,30-day mortality; treatment response,no
+study_overview,regulatory_context,Regulatory or decision context (if any),Not intended for immediate clinical deployment,no
+
+cohort,inclusion_criteria,Semicolon-separated inclusion criteria,"Age >= 18; Histologically confirmed NSCLC",yes
+cohort,exclusion_criteria,Semicolon-separated exclusion criteria,"Prior malignancy; Missing baseline CT",no
+cohort,time_origin,Definition of time origin,Date of diagnosis,yes
+cohort,cohort_size_estimate,Approximate number of individuals in cohort,500,yes
+
+data_sources,datasets,Free-text description of datasets and roles (will be mapped to JSON later),"DS1: single-center baseline; DS2: external validation",yes
+
+variables,variable_dictionary_reference,Location of variable dictionary file or table description,"See clinical_variables.xlsx",yes
+
+outcomes,outcome_definitions,Free-text description of outcomes and label regimes,"Primary: 3-year OS (time_to_event); Secondary: 30-day mortality (binary)",yes
+
+sensitive_attributes,sensitive_attribute_variables,Comma-separated sensitive attribute variable names and any governance notes,"sex (required); race (prohibited); center (required)",no
+
+constraints_and_priorities,expected_sample_size,Expected sample size,500,yes
+constraints_and_priorities,approx_feature_dimensionality,Approximate feature dimensionality (if known),20000,no
+constraints_and_priorities,compute_environment,Compute environment (workstation / HPC_cluster / cloud / other),HPC_cluster,no
+constraints_and_priorities,access_limitations,Access limitations (secure enclave, export rules, etc.),Data must remain in secure enclave,no
+constraints_and_priorities,analysis_priorities,Comma-separated analysis priorities (predictive_performance, interpretability, fairness, stability, external_generalizability),"predictive_performance, fairness, stability",yes
+constraints_and_priorities,required_metrics,Comma-separated required evaluation metrics,"AUROC, AUPRC, calibration",no
+constraints_and_priorities,forbidden_operations,Comma-separated forbidden operations,"no use of race as predictor",no

@@ -1,0 +1,73 @@
+from datetime import datetime, timezone
+from typing import Any, Dict
+
+
+def apply_governance_filters(
+    bundle: Dict[str, Any],
+    governance: Dict[str, Any],
+) -> None:
+    """Apply high-level governance constraints.
+
+    Examples:
+    - Ensure no prompts explicitly endorse forbidden operations.
+    - Optionally redact sensitive attribute names from prompts if required.
+
+    This implementation is deliberately conservative and only performs
+    lightweight checks. Projects with strict governance should extend this.
+    """
+    forbidden_ops = set(governance.get("forbidden_operations", []))
+    if not forbidden_ops:
+        return
+
+    forbidden_strings = {op.lower().replace("_", " ") for op in forbidden_ops}
+
+    for audit_name, audit in bundle.get("audits", {}).items():
+        system_prompt = audit.get("system_prompt", "")
+        if any(s in system_prompt.lower() for s in forbidden_strings):
+            audit["system_prompt"] += (
+                "\n\n[Governance note: The configuration flags certain "
+                "operations as forbidden; do not propose or execute them.]"
+            )
+
+        for key, text in audit.get("user_prompt_templates", {}).items():
+            if any(s in text.lower() for s in forbidden_strings):
+                audit["user_prompt_templates"][key] = (
+                    text
+                    + "\n\n[Governance note: Do not design prompts that would "
+                    "enable forbidden operations.]"
+                )
+
+
+def validate_bundle(bundle: Dict[str, Any]) -> None:
+    """Minimal internal validation of the instruction bundle.
+
+    For full validation, use the JSON Schema in schema/audit_instruction_bundle.schema.json.
+    """
+    if "audits" not in bundle:
+        raise ValueError("Instruction bundle must contain an 'audits' key.")
+
+    if not bundle["audits"]:
+        raise ValueError("Instruction bundle must contain at least one audit.")
+
+    for name, audit in bundle["audits"].items():
+        if "system_prompt" not in audit or not audit["system_prompt"].strip():
+            raise ValueError(f"Audit '{name}' has empty system_prompt.")
+        if "user_prompt_templates" not in audit:
+            raise ValueError(f"Audit '{name}' missing user_prompt_templates.")
+        if "profile" not in audit:
+            raise ValueError(f"Audit '{name}' missing profile.")
+
+
+def add_metadata_and_timestamp(
+    bundle: Dict[str, Any],
+    sp0: Dict[str, Any],
+    sp1: Dict[str, Any],
+    sp2: Dict[str, Any],
+    project_id: str,
+) -> None:
+    """Fill in top-level bundle metadata."""
+    bundle["project_id"] = project_id
+    bundle["sp0_version"] = sp0.get("version", "sp0_unknown")
+    bundle["sp1_version"] = sp1.get("version", "sp1_unknown")
+    bundle["sp2_version"] = sp2.get("version", "sp2_unknown")
+    bundle["generated_at"] = datetime.now(timezone.utc).isoformat()
