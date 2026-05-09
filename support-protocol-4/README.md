@@ -1,103 +1,69 @@
-# Support Protocol 4 – Generation of Personalized Instructions for DRAFT Audits
+# SUPPORT PROTOCOL 4 – Generation of Personalized Instructions for DRAFT Audits
 
-This module implements **Support Protocol 4: Generation of Personalized Instructions for DRAFT Audits**.
+This directory contains the **non-paper assets** for **Support Protocol 4: Generation of Personalized Instructions for DRAFT Audits** in the DRAFT‑LLM workflow.
 
-Support Protocol 4 uses:
+## 🎯 Purpose
 
-- the **dataset card** (Support Protocol 0),
-- the **statistics card** (Support Protocol 1),
-- the **LLM configuration** (Support Protocol 2), and
-- **method-agnostic DRAFT audit templates**
+Support Protocol 4 is the final "Assembly" stage of the support layer. It ingests the validated artifacts from the previous protocols to generate a **DRAFT‑LLM Instruction Bundle** (`instruction_bundle.json`). 
 
-to generate a **personalized DRAFT‑LLM instruction bundle** for:
-
-- Generalization audit (Basic Protocol 1),
-- Equity audit (Basic Protocol 2),
-- Stability / robustness audit (Basic Protocol 3, if applicable).
-
-The output bundle provides:
-
-- **Concrete system prompts** (one per audit type).
-- **Concrete user prompt templates** (e.g., `plan`, `refine`, `subgroup_analysis`).
-- **Structured audit profiles** that encode design choices for each audit.
-
-The bundle is intended to be consumed by an orchestration layer that runs the
-DRAFT Basic Protocols, ensuring that all LLM interactions are:
-
-- study‑aware,
-- data‑aware, and
-- governance‑compliant.
+This bundle is a study-specific package that tells the LLM exactly how to behave during the three Basic Protocols (Generalization, Equity, and Stability). By "compiling" the instructions here, we ensure that the audits are:
+- **Consistent:** Every audit run uses the same system prompts and decision logic.
+- **Context-Aware:** The LLM knows the specific subgroups (from SP1/SP2) and governance rules (from SP3).
+- **Audit-Ready:** It provides the LLM with the "Audit Profile"—the metrics, thresholds, and comparison strategies relevant to the specific biological task.
 
 ---
 
-## 1. Inputs
+## 📂 Contents
 
-Support Protocol 4 expects:
+### ⚙️ Orchestration & Schema
+- **`schema/audit_instruction_bundle.schema.json`**  
+  The JSON Schema for the final output. It defines the structure for `generalization_audit`, `equity_audit`, and `stability_audit` sections.
+- **`scripts/build_instruction_bundle.py`**  
+  The main compiler script. It pulls data from SP1, SP2, and SP3, applies them to the audit templates, and generates the final JSON package.
+- **`configs/audit_templates.json`**  
+  Method-agnostic "blueprints" for the three Basic Protocols. These define the *logic* of an audit (e.g., "Compare performance across sites") without being tied to a specific dataset.
 
-1. **Dataset card (SP0)** – JSON  
-   Includes:
-   - Study goals and intended use.
-   - Data description and key variables (including outcome and sensitive attributes).
-   - User profile (expertise, language, explanation style).
-   - Governance and risk constraints.
-   - Resource constraints.
-
-2. **Statistics card (SP1)** – JSON  
-   Includes:
-   - Global and subgroup statistics.
-   - Outcome distributions, imbalance, missingness.
-   - Indicators of dependence, heterogeneity, or other relevant structure.
-
-3. **LLM configuration (SP2)** – JSON  
-   Typically produced by Support Protocol 3. Includes:
-   - `study_profile` (goal, analysis_type, intended_use, risk_level).
-   - `user_profile` (expertise, interaction_style, code_style, language).
-   - `governance` (sensitive_attributes, allowed_uses, forbidden_operations, interpretability_requirements).
-   - `resources` (compute_budget, allowed_libraries, environment_constraints).
-   - `data_risk_flags` (e.g., `imbalance_flag`, `must_discuss_imbalance`, `heterogeneity_flag`).
-   - `base_system_prompt` (string).
-   - `prompt_templates` (generic EDA/modeling/robustness templates).
-
-4. **DRAFT audit templates** – JSON (`configs/audit_templates.json`)  
-   Method‑agnostic “blueprints” for:
-   - Generalization audit (Basic Protocol 1),
-   - Equity audit (Basic Protocol 2),
-   - Stability / robustness audit (Basic Protocol 3).
-   These describe **what each audit should achieve** (e.g., cross‑validation,
-   subgroup performance comparison, feature stability), not yet tailored to a
-   particular study.
-
-5. **(Optional) User‑selected audit focus** – JSON  
-   - Which audits to prioritize (e.g., run `["generalization", "equity"]` first).
-   - Optional priority areas (e.g., specific subgroups or features of concern).
+### 🧩 Logic Modules
+- **`sp4/extractor.py`:** Pulls audit-relevant parameters (e.g., list of sensitive attributes, outcome type) from the cards.
+- **`sp4/profiles.py`:** Tailors the audit profiles (e.g., selecting "Brier Score" for probability-calibrated tasks).
+- **`sp4/prompts.py`:** Injects the study-specific context into the audit system prompts.
 
 ---
 
-## 2. High‑level workflow
+## 📥 Inputs Required
 
-Support Protocol 4 proceeds in four steps:
-
-1. **Extract audit‑relevant parameters** from SP0–SP2 (`sp4.extractor`).
-2. **Instantiate audit profiles** (generalization, equity, stability) tailored
-   to the study (`sp4.profiles`).
-3. **Generate audit‑specific system and user prompts** (`sp4.prompts`).
-4. **Validate and package** them into a DRAFT‑LLM instruction bundle
-   (`sp4.validate` and `scripts/build_instruction_bundle.py`).
-
-The final instruction bundle conforms to:
-`schema/audit_instruction_bundle.schema.json`.
+1.  **Dataset Card (SP1):** For study goals and variable roles.
+2.  **Statistics Card (SP2):** For empirical risk flags (imbalance, missingness).
+3.  **LLM Configuration (SP3):** For governance rules, personas, and system-wide prompts.
 
 ---
 
-## 3. Quickstart
+## 🚀 Quickstart
 
-### 3.1 Install
-
-This module only uses Python standard library; a `requirements.txt` is provided
-for convenience if you wish to add optional tooling.
+### 1. Installation
+This module primarily uses the Python standard library with `jsonschema` for validation.
 
 ```bash
-cd support-protocol-4
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-pip install -r requirements.txt
+pip install jsonschema
+```
+
+### 2. Generate the Instruction Bundle
+Ensure your SP1, SP2, and SP3 JSON files are ready.
+
+```bash
+python scripts/build_instruction_bundle.py \
+    --sp1 ../support-protocol-1/dataset_card.json \
+    --sp2 ../support-protocol-2/statistics_card.json \
+    --sp3 ../support-protocol-3/llm_config.json \
+    --output instruction_bundle.json
+```
+
+---
+
+## 🔗 Connection to Workflow
+The **`instruction_bundle.json`** is the direct input for the three **Basic Protocols (BP)**:
+- **BP1 (Generalization):** Uses the `generalization_audit` profile.
+- **BP2 (Equity):** Uses the `equity_audit` profile + sensitive attributes.
+- **BP3 (Stability):** Uses the `stability_audit` profile + technical covariates.
+
+For a complete end-to-end example (TCGA Case Study), see `/examples/tcga_luad/sp4_instruction_bundle.json`.
