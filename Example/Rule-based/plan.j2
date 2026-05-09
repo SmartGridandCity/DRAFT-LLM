@@ -1,0 +1,25 @@
+### RULE-BASED GENERALIZATION PLAN
+Study: {{ study_name }}
+Generated via: Jinja2 Logic (Baseline)
+
+[1] EVALUATION DESIGN:
+{% if stats.imbalance_flag %}
+- Strategy: Stratified K-Fold Cross-Validation
+- Reason: Class imbalance detected (Minority class < {{ stats.min_class_pct }}%).
+{% elif stats.is_time_series %}
+- Strategy: Time-Series Forward Chaining
+- Reason: Temporal dependency detected.
+{% else %}
+- Strategy: Standard 5-Fold Cross-Validation
+{% endif %}
+
+[2] METRIC SELECTION:
+- Primary: {{ "F1-Score/AUPRC" if stats.imbalance_flag else "Accuracy/AUC" }}
+- Secondary: Brier Score (Calibration)
+
+[3] DATA HANDLING:
+{% if stats.missingness_pct > 10 %}
+- Action: Apply Mean/Median Imputation.
+{% else %}
+- Action: Listwise deletion of missing records.
+{% endif %}
