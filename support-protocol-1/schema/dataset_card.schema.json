@@ -202,7 +202,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["dataset_id", "table_id", "name", "canonical_role", "dtype"],
+        "required": ["dataset_id", "table_id", "name", "role", "dtype"],
         "properties": {
           "dataset_id": {
             "type": "string",
